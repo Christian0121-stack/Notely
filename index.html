@@ -1,0 +1,2028 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notely</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            color: #2C3E50;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle at 80% 40%, rgba(255,255,255,0.08) 1px, transparent 1px),
+                radial-gradient(circle at 40% 80%, rgba(255,255,255,0.06) 1px, transparent 1px),
+                radial-gradient(circle at 90% 10%, rgba(255,255,255,0.04) 1px, transparent 1px),
+                radial-gradient(circle at 10% 90%, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 150px 150px, 200px 200px, 100px 100px, 300px 300px, 250px 250px;
+            animation: floatingParticles 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes floatingParticles {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-20px) rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.6), 0 0 60px rgba(102, 126, 234, 0.4); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from { transform: translate(-50%, -30%); opacity: 0; }
+            to { transform: translate(-50%, -50%); opacity: 1; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 24px;
+            padding: 50px 40px;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            max-width: 450px;
+            margin: 0 auto;
+            animation: slideInLeft 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent, 
+                rgba(102, 126, 234, 0.03), 
+                transparent,
+                rgba(118, 75, 162, 0.03),
+                transparent);
+            animation: shimmer 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .auth-container:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.16),
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        .logo-circle {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 
+                0 20px 40px rgba(102, 126, 234, 0.3),
+                0 0 60px rgba(102, 126, 234, 0.2);
+            position: relative;
+            animation: glow 2s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .logo-circle:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+                0 25px 50px rgba(102, 126, 234, 0.4),
+                0 0 80px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo-circle::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-circle:hover::before {
+            opacity: 1;
+            animation: spin 2s linear infinite;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-subtitle {
+            font-size: 16px;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .form-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .form-subtitle {
+            font-size: 16px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+            transition: color 0.3s ease;
+        }
+
+        .input-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .input-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(102, 126, 234, 0.1), 
+                transparent);
+            transition: left 0.5s ease;
+        }
+
+        .input-wrapper.focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 20px 25px -5px rgba(102, 126, 234, 0.1),
+                0 10px 10px -5px rgba(102, 126, 234, 0.04);
+        }
+
+        .input-wrapper.focus::before {
+            left: 100%;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 18px 20px;
+            border: none;
+            font-size: 16px;
+            outline: none;
+            background: transparent;
+            color: #1e293b;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .form-group input:focus::placeholder {
+            transform: translateY(-3px);
+            opacity: 0.7;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-wrapper.focus .input-icon {
+            color: #667eea;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            box-shadow: 
+                0 20px 25px -5px rgba(102, 126, 234, 0.25),
+                0 10px 10px -5px rgba(102, 126, 234, 0.04);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 25px 40px -5px rgba(102, 126, 234, 0.4),
+                0 15px 25px -5px rgba(102, 126, 234, 0.15);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+            transition: transform 0.1s ease;
+        }
+
+        .btn-disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+            background: #94a3b8 !important;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 32px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+            position: relative;
+        }
+
+        .auth-toggle a::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .auth-toggle a:hover::before {
+            width: 100%;
+        }
+
+        .auth-toggle a:hover {
+            color: #764ba2;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            font-weight: 500;
+            box-shadow: 
+                0 10px 15px -3px rgba(239, 68, 68, 0.2),
+                0 4px 6px -2px rgba(239, 68, 68, 0.05);
+            transform: translateY(-10px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .error-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .error-message i {
+            font-size: 18px;
+        }
+
+        .decorative-dots {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            opacity: 0.6;
+            animation: breathe 2s ease-in-out infinite;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        .security-badge {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .security-badge i {
+            font-size: 14px;
+        }
+
+        .app-container {
+            display: none;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border: 1px solid rgba(52, 152, 219, 0.1);
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .profile-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .profile-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .logout-btn {
+            background: rgba(231, 76, 60, 0.8);
+            border: 2px solid rgba(231, 76, 60, 0.6);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: rgba(231, 76, 60, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .app-content {
+            display: flex;
+            height: 75vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: linear-gradient(180deg, #f8f9fa, #e9ecef);
+            border-right: 1px solid rgba(52, 152, 219, 0.1);
+            padding: 25px;
+            overflow-y: auto;
+            animation: slideInLeft 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) 0.2s both;
+        }
+
+        .main-content {
+            flex: 1;
+            background: linear-gradient(180deg, #ffffff, #f8f9fa);
+            overflow-y: auto;
+            animation: slideInRight 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) 0.4s both;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27AE60, #229954);
+            height: 40px;
+            padding-top: 0;
+            padding-bottom: 0;
+            min-width: 90px;
+            font-size: 15px;
+        }
+
+        .notepad-item {
+            background: linear-gradient(145deg, #ffffff, #f1f2f6);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .notepad-item:hover {
+            transform: translateX(4px) translateY(-1px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+
+        .notepad-item.active {
+            border-color: #667eea;
+            background: linear-gradient(145deg, #f0f2ff, #e6eaff);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+        }
+
+        .notepad-info {
+            flex: 1;
+            cursor: pointer;
+            padding: 5px;
+            pointer-events: auto;
+        }
+
+        .notepad-title-display {
+            font-weight: 600;
+            font-size: 16px;
+            color: #2C3E50;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .notepad-date {
+            font-size: 12px;
+            color: #7F8C8D;
+            font-weight: 500;
+        }
+
+        .notepad-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .notepad-item:hover .notepad-actions {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+            pointer-events: auto;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #ee5a52, #e74c3c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+        }
+
+        .delete-btn:active {
+            transform: translateY(0);
+        }
+
+        .new-notepad-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #27AE60, #229954);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 25px;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
+        }
+
+        .new-notepad-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(39, 174, 96, 0.3);
+            background: linear-gradient(135deg, #229954, #1E8449);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            padding: 10px 15px;
+            background: linear-gradient(145deg, #ffffff, #f1f2f6);
+            border: 2px solid #E8E8E8;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            font-weight: 600;
+            font-size: 14px;
+            color: #2C3E50;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .toolbar-btn:hover {
+            background: linear-gradient(145deg, #f1f2f6, #e8e8e8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .column-select {
+            padding: 10px 15px;
+            background: linear-gradient(145deg, #ffffff, #f1f2f6);
+            border: 2px solid #E8E8E8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2C3E50;
+            min-width: 140px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 10px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .column-select:hover {
+            background: linear-gradient(145deg, #f1f2f6, #e8e8e8);
+            border-color: #667eea;
+        }
+
+        .notepad-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            padding: 25px 30px 20px 30px;
+            border: none;
+            outline: none;
+            background: transparent;
+            border-bottom: 3px solid #E8E8E8;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            color: #2C3E50;
+            width: 100%;
+        }
+
+        .notepad-title:focus {
+            border-bottom-color: #667eea;
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        .editor-wrapper {
+            position: relative;
+            padding: 30px;
+        }
+
+        .columns-container {
+            display: grid;
+            gap: 30px;
+            min-height: 450px;
+        }
+
+        .columns-container.cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .columns-container.cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .columns-container.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .columns-container.cols-4 {
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+        }
+
+        .columns-container.cols-5 {
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        }
+
+        .notepad-column {
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .notepad-column:focus-within {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.02);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .notepad-column [contenteditable] {
+            outline: none;
+            min-height: 350px;
+            font-size: 16px;
+            line-height: 1.8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2C3E50;
+        }
+
+        .notepad-column [contenteditable]:empty::before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: 10px;
+            right: 30px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .save-status {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #27AE60, #229954);
+            color: white;
+            border-radius: 25px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            z-index: 1000;
+            font-weight: 600;
+            box-shadow: 0 8px 16px rgba(39, 174, 96, 0.3);
+        }
+
+        .save-status.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 80px 30px;
+            color: #7F8C8D;
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) 0.6s both;
+        }
+
+        .welcome-message h2 {
+            margin-bottom: 15px;
+            color: #2C3E50;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .welcome-message p {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            animation: slideInUp 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2C3E50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7F8C8D;
+            transition: color 0.3s ease;
+            padding: 5px;
+            border-radius: 50%;
+        }
+
+        .close-btn:hover {
+            color: #E74C3C;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 8px 15px;
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .auth-container {
+                padding: 40px 30px;
+                margin: 20px;
+                border-radius: 20px;
+            }
+
+            .logo-circle {
+                width: 80px;
+                height: 80px;
+                font-size: 36px;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+
+            .form-title {
+                font-size: 28px;
+            }
+            
+            .app-content {
+                flex-direction: column;
+                height: auto;
+                min-height: 70vh;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+                max-height: 250px;
+                padding: 20px;
+            }
+            
+            .toolbar {
+                padding: 15px;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .toolbar-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .app-header {
+                padding: 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .app-title {
+                font-size: 22px;
+                text-align: center;
+            }
+            
+            .user-info {
+                gap: 15px;
+            }
+            
+            .notepad-title {
+                font-size: 24px;
+                padding: 20px 20px 15px 20px;
+            }
+            
+            .editor-wrapper {
+                padding: 20px;
+            }
+
+            .columns-container.cols-2,
+            .columns-container.cols-3,
+            .columns-container.cols-4,
+            .columns-container.cols-5 {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 30px 20px;
+                margin: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 10px;
+                padding: 30px 20px;
+            }
+
+            .logo-circle {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .logo-text {
+                font-size: 20px;
+            }
+
+            .form-title {
+                font-size: 24px;
+            }
+            
+            .notepad-title {
+                font-size: 20px;
+                padding: 15px 15px 10px 15px;
+            }
+            
+            .toolbar {
+                gap: 6px;
+                padding: 12px;
+            }
+            
+            .user-info {
+                gap: 10px;
+            }
+            
+            .profile-btn,
+            .logout-btn {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+
+            .welcome-message {
+                padding: 50px 20px;
+            }
+
+            .welcome-message h2 {
+                font-size: 24px;
+            }
+
+            .welcome-message p {
+                font-size: 16px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2, #5a67d8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="authContainer" class="auth-container">
+            <div class="decorative-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="security-badge">
+                <i class="fas fa-shield-alt"></i>
+                Secure Login
+            </div>
+
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="logo-text">NOTELY</div>
+                <div class="logo-subtitle">Professional Notepad Platform</div>
+            </div>
+
+            <div id="errorMessage" class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span></span>
+            </div>
+            
+            <div id="loginForm">
+                <div class="form-header">
+                    <h2 class="form-title">Welcome Back</h2>
+                    <p class="form-subtitle">Sign in to your account</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="loginUsername" placeholder="Enter your username" required>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="loginUser()">
+                    <span id="loginSpinner" class="loading" style="display: none;"></span>
+                    <span id="loginText">Sign In</span>
+                </button>
+
+                <div class="auth-toggle">
+                    Don't have an account? <a onclick="showRegister()">Create one now</a>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <div class="form-header">
+                    <h2 class="form-title">Create Account</h2>
+                    <p class="form-subtitle">Join our professional platform</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="registerUsername" placeholder="Choose a username" required>
+                        <i class="fas fa-user-plus input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="registerPassword" placeholder="Create a password" required>
+                        <i class="fas fa-key input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                        <i class="fas fa-shield-alt input-icon"></i>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="registerUser()">
+                    <span id="registerSpinner" class="loading" style="display: none;"></span>
+                    <span id="registerText">Create Account</span>
+                </button>
+
+                <div class="auth-toggle">
+                    Already have an account? <a onclick="showLogin()">Sign in here</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="appContainer" class="app-container">
+            <div class="app-header">
+                <div class="app-title">💼 NOTELY</div>
+                <div class="user-info">
+                    <button class="profile-btn" onclick="openProfileModal()">
+                        👤 <span id="currentUser">User</span>
+                    </button>
+                    <button class="logout-btn" onclick="logoutUser()">Logout</button>
+                </div>
+            </div>
+            
+            <div class="app-content">
+                <div class="sidebar">
+                    <button class="new-notepad-btn" onclick="createNewNotepad()">
+                        ➕ New Notepad
+                    </button>
+                    <div id="notepadsList"></div>
+                </div>
+                
+                <div class="main-content">
+                    <div id="welcomeMessage" class="welcome-message">
+                        <h2>Welcome to Professional Notepad!</h2>
+                        <p>Select a notepad from the sidebar or create a new one to get started.</p>
+                    </div>
+                    
+                    <div id="notepadEditor" style="display: none;">
+                        <input type="text" id="notepadTitle" class="notepad-title" placeholder="Untitled Notepad">
+                        
+                        <div class="toolbar">
+                            <div class="toolbar-group">
+                                <button class="toolbar-btn" onclick="toggleFormat('bold')"><strong>B</strong></button>
+                                <button class="toolbar-btn" onclick="toggleFormat('italic')"><em>I</em></button>
+                                <button class="toolbar-btn" onclick="toggleFormat('underline')"><u>U</u></button>
+                                <button class="toolbar-btn" onclick="toggleFormat('strikethrough')"><s>S</s></button>
+                                <button class="toolbar-btn" onclick="toggleFormat('subscript')">X<sub>2</sub></button>
+                                <button class="toolbar-btn" onclick="toggleFormat('superscript')">X<sup>2</sup></button>
+                                <select class="column-select" id="columnSelect" onchange="changeColumns()">
+                                    <option value="1">1 Column</option>
+                                    <option value="2">2 Columns</option>
+                                    <option value="3">3 Columns</option>
+                                    <option value="4">4 Columns</option>
+                                    <option value="5">5 Columns</option>
+                                </select>
+                            </div>
+                            <div class="toolbar-actions">
+                                <button class="btn-success" onclick="saveNotepad()">
+                                    💾 Save
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editor-wrapper">
+                            <div id="columnsContainer" class="columns-container cols-1"></div>
+                            <div id="charCount" class="char-count">Characters: 0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Profile</h3>
+                <button class="close-btn" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="profileUsername">Username</label>
+                <input type="text" id="profileUsername" readonly style="background: #f8f9fa;">
+            </div>
+            <div class="form-group">
+                <label for="profileEmail">Email Address</label>
+                <input type="email" id="profileEmail" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="profilePhone">Phone Number (09**-***-***)</label>
+                <input type="text" id="profilePhone" placeholder="09**-***-***" maxlength="12">
+            </div>
+            <button class="btn" onclick="updateProfile()">
+                <span id="updateSpinner" class="loading" style="display: none;"></span>
+                <span id="updateText">Update Profile</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🗑️ Delete Notepad</h3>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p style="margin-bottom: 20px; color: #7f8c8d;">Are you sure you want to delete this notepad? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="saveStatus" class="save-status">Saved Successfully!</div>
+    <div id="autoSaveIndicator" class="auto-save-indicator">Auto-saving...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBak4GPwwLm7jdXClCVEvYBmWrjmt2XBq8",
+            authDomain: "cybersecurity-c1710.firebaseapp.com",
+            databaseURL: "https://cybersecurity-c1710-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "cybersecurity-c1710",
+            storageBucket: "cybersecurity-c1710.firebasestorage.app",
+            messagingSenderId: "1089285159722",
+            appId: "1:1089285159722:web:b9d7fd317b7850dc5cbc53",
+            measurementId: "G-9RQT28QJS9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        let currentUser = null;
+        let currentNotepadId = null;
+        let userNotepads = {};
+        let nextUserId = 1;
+        let autoSaveTimer = null;
+        let notepadToDelete = null;
+        let currentColumnCount = 1;
+
+        window.onload = function() {
+            loadNextUserId();
+            checkUserSession();
+            setupEventListeners();
+        };
+
+        function setupEventListeners() {
+            const inputs = document.querySelectorAll('.form-group input');
+            inputs.forEach(input => {
+                const wrapper = input.closest('.input-wrapper');
+                input.addEventListener('focus', () => wrapper.classList.add('focus'));
+                input.addEventListener('blur', () => wrapper.classList.remove('focus'));
+            });
+
+            document.getElementById('profilePhone').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d]/g, '');
+                if (value.length > 0) {
+                    if (value.length <= 4) {
+                        value = value.replace(/(\d{2})(\d{0,2})/, '$1$2');
+                    } else if (value.length <= 7) {
+                        value = value.replace(/(\d{2})(\d{2})(\d{0,3})/, '$1$2-$3');
+                    } else {
+                        value = value.replace(/(\d{2})(\d{2})(\d{3})(\d{0,3})/, '$1$2-$3-$4');
+                    }
+                    if (!value.startsWith('09')) {
+                        value = '09' + value.substring(2);
+                    }
+                }
+                e.target.value = value;
+            });
+
+            document.getElementById('notepadTitle').addEventListener('input', function() {
+                triggerAutoSave();
+            });
+
+            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') loginUser();
+            });
+            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') registerUser();
+            });
+        }
+
+        function createColumnElements(count) {
+            const container = document.getElementById('columnsContainer');
+            container.innerHTML = '';
+            container.className = `columns-container cols-${count}`;
+            
+            for (let i = 0; i < count; i++) {
+                const column = document.createElement('div');
+                column.className = 'notepad-column';
+                
+                const content = document.createElement('div');
+                content.contentEditable = true;
+                content.dataset.placeholder = `Type in column ${i + 1}...`;
+                content.dataset.columnIndex = i;
+                content.addEventListener('input', handleColumnInput);
+                
+                column.appendChild(content);
+                container.appendChild(column);
+            }
+            
+            currentColumnCount = count;
+        }
+
+        function handleColumnInput(e) {
+            updateCharacterCount();
+            triggerAutoSave();
+        }
+
+        function updateCharacterCount() {
+            const columns = document.querySelectorAll('.notepad-column [contenteditable]');
+            let totalChars = 0;
+            columns.forEach(col => {
+                totalChars += col.innerText.length;
+            });
+            document.getElementById('charCount').textContent = `Characters: ${totalChars}`;
+        }
+
+        function triggerAutoSave() {
+            showAutoSaveIndicator();
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                if (currentNotepadId) {
+                    saveNotepad(true);
+                }
+                hideAutoSaveIndicator();
+            }, 3000);
+        }
+
+        function loadNextUserId() {
+            const ref = database.ref('users');
+            ref.once('value', (snapshot) => {
+                const users = snapshot.val();
+                if (users) {
+                    const userIds = Object.keys(users).map(id => parseInt(id)).filter(id => !isNaN(id));
+                    nextUserId = userIds.length > 0 ? Math.max(...userIds) + 1 : 1;
+                } else {
+                    nextUserId = 1;
+                }
+            });
+        }
+
+        function checkUserSession() {
+            const savedUser = localStorage.getItem('currentUser');
+            const savedUserId = localStorage.getItem('currentUserId');
+            if (savedUser && savedUserId) {
+                currentUser = { username: savedUser, userId: savedUserId };
+                currentNotepadId = null;
+                userNotepads = {};
+                showApp();
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const messageSpan = errorDiv.querySelector('span');
+            messageSpan.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+        }
+
+        function registerUser() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!username || !password || !confirmPassword) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+            
+            document.getElementById('registerSpinner').style.display = 'inline-block';
+            document.getElementById('registerText').textContent = 'Creating...';
+            
+            database.ref('users').orderByChild('username').equalTo(username).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    showError('Username already exists');
+                    document.getElementById('registerSpinner').style.display = 'none';
+                    document.getElementById('registerText').textContent = 'Create Account';
+                    return;
+                }
+                
+                const userId = nextUserId.toString();
+                const userData = {
+                    username: username,
+                    password: password,
+                    email: '',
+                    phone: '',
+                    created_at: Date.now()
+                };
+                
+                database.ref('users/' + userId).set(userData)
+                    .then(() => {
+                        nextUserId++;
+                        currentUser = { username: username, userId: userId };
+                        localStorage.setItem('currentUser', username);
+                        localStorage.setItem('currentUserId', userId);
+                        showApp();
+                    })
+                    .catch((error) => {
+                        showError('Registration failed: ' + error.message);
+                    })
+                    .finally(() => {
+                        document.getElementById('registerSpinner').style.display = 'none';
+                        document.getElementById('registerText').textContent = 'Create Account';
+                    });
+            });
+        }
+
+        function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            document.getElementById('loginSpinner').style.display = 'inline-block';
+            document.getElementById('loginText').textContent = 'Signing in...';
+            
+            database.ref('users').orderByChild('username').equalTo(username).once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    showError('Invalid username or password');
+                    document.getElementById('loginSpinner').style.display = 'none';
+                    document.getElementById('loginText').textContent = 'Sign In';
+                    return;
+                }
+                
+                const userData = snapshot.val();
+                const userId = Object.keys(userData)[0];
+                const user = userData[userId];
+                
+                if (user.password === password) {
+                    currentUser = { username: username, userId: userId };
+                    localStorage.setItem('currentUser', username);
+                    localStorage.setItem('currentUserId', userId);
+                    showApp();
+                } else {
+                    showError('Invalid username or password');
+                }
+                
+                document.getElementById('loginSpinner').style.display = 'none';
+                document.getElementById('loginText').textContent = 'Sign In';
+            });
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            currentNotepadId = null;
+            userNotepads = {};
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentUserId');
+
+            document.getElementById('notepadTitle').value = '';
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('appContainer').style.display = 'none';
+            
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('currentUser').textContent = currentUser.username;
+            loadUserNotepads();
+        }
+
+        function loadUserNotepads() {
+            const ref = database.ref('notepads/' + currentUser.userId);
+            ref.on('value', (snapshot) => {
+                userNotepads = snapshot.val() || {};
+                renderNotepadsList();
+            });
+        }
+
+        function renderNotepadsList() {
+            const container = document.getElementById('notepadsList');
+            container.innerHTML = '';
+            
+            Object.keys(userNotepads).forEach(notepadKey => {
+                const notepad = userNotepads[notepadKey];
+                const parts = notepadKey.split('_');
+                const title = parts.slice(2).join('_') || 'Untitled';
+                
+                const item = document.createElement('div');
+                item.className = 'notepad-item';
+                if (currentNotepadId === notepadKey) {
+                    item.classList.add('active');
+                }
+                
+                item.innerHTML = `
+                    <div class="notepad-info">
+                        <div class="notepad-title-display">${title}</div>
+                        <div class="notepad-date">
+                            ${new Date(notepad.created_at || Date.now()).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div class="notepad-actions">
+                        <button class="delete-btn" title="Delete Notepad">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                `;
+                
+                const notepadInfo = item.querySelector('.notepad-info');
+                notepadInfo.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    loadNotepad(notepadKey);
+                });
+
+                const deleteBtn = item.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showDeleteModal(notepadKey);
+                });
+                
+                container.appendChild(item);
+            });
+        }
+
+        function createNewNotepad() {
+            const timestamp = Date.now();
+            const title = 'Untitled';
+            const notepadKey = `notepad_${timestamp}_${title}`;
+            currentNotepadId = notepadKey;
+
+            const notepadData = {
+                created_at: timestamp,
+                active_status: 1,
+                columns: 1,
+                content: ['']
+            };
+            userNotepads[notepadKey] = notepadData;
+
+            document.getElementById('welcomeMessage').style.display = 'none';
+            document.getElementById('notepadEditor').style.display = 'block';
+
+            document.getElementById('notepadTitle').value = title;
+            document.getElementById('columnSelect').value = '1';
+            createColumnElements(1);
+            renderNotepadsList();
+        }
+
+        function toggleFormat(format) {
+            const formatCommands = {
+                bold: 'bold',
+                italic: 'italic',
+                underline: 'underline',
+                strikethrough: 'strikeThrough',
+                subscript: 'subscript',
+                superscript: 'superscript'
+            };
+            const command = formatCommands[format];
+            if (!command) {
+                showError('Unknown format type: ' + format);
+                return;
+            }
+            document.execCommand(command, false, null);
+        }
+
+        function saveNotepad(isAutoSave = false) {
+            if (!currentNotepadId || !currentUser) return;
+
+            const title = document.getElementById('notepadTitle').value || 'Untitled';
+            const columns = document.querySelectorAll('.notepad-column [contenteditable]');
+            const content = Array.from(columns).map(col => col.innerHTML);
+
+            const oldKey = currentNotepadId;
+            const timestamp = userNotepads[oldKey]?.created_at || Date.now();
+            const newKey = `notepad_${timestamp}_${title}`;
+
+            const notepadData = {
+                created_at: timestamp,
+                active_status: 1,
+                columns: currentColumnCount,
+                content: content
+            };
+
+            const ref = database.ref('notepads/' + currentUser.userId);
+
+            if (oldKey !== newKey) {
+                ref.child(oldKey).remove();
+                currentNotepadId = newKey;
+            }
+
+            ref.child(newKey).set(notepadData)
+                .then(() => {
+                    if (!isAutoSave) {
+                        showSaveStatus();
+                    }
+                })
+                .catch((error) => {
+                    showError('Save failed: ' + error.message);
+                });
+        }
+
+        function loadNotepad(notepadKey) {
+            currentNotepadId = notepadKey;
+            const notepad = userNotepads[notepadKey];
+
+            if (!notepad) {
+                console.error('Notepad not found:', notepadKey);
+                return;
+            }
+
+            document.getElementById('welcomeMessage').style.display = 'none';
+            document.getElementById('notepadEditor').style.display = 'block';
+
+            let title = 'Untitled';
+            const parts = notepadKey.split('_');
+            title = parts.slice(2).join('_') || 'Untitled';
+            document.getElementById('notepadTitle').value = title;
+
+            const columnCount = notepad.columns || 1;
+            const content = notepad.content || [''];
+            
+            document.getElementById('columnSelect').value = columnCount.toString();
+            createColumnElements(columnCount);
+            
+            const columns = document.querySelectorAll('.notepad-column [contenteditable]');
+            columns.forEach((col, index) => {
+                col.innerHTML = content[index] || '';
+            });
+            
+            updateCharacterCount();
+            renderNotepadsList();
+        }
+
+function changeColumns() {
+    const columnCount = parseInt(document.getElementById('columnSelect').value);
+
+    // Get current content per column
+    const currentColumns = document.querySelectorAll('.notepad-column [contenteditable]');
+    let currentContent = Array.from(currentColumns).map(col => col.innerHTML);
+
+    // If we're decreasing the number of columns, merge dropped column contents into last new column
+    if (currentContent.length > columnCount) {
+        // Extract columns-to-keep and columns-to-merge
+        const keepContent = currentContent.slice(0, columnCount);
+        const toMergeContent = currentContent.slice(columnCount);
+
+        if (toMergeContent.length) {
+            // Merge all dropped column text/html to the last new column
+            let merged = keepContent[columnCount - 1] || '';
+            merged += toMergeContent.map(html => html.trim()).filter(Boolean).join('<br><hr><br>');
+            keepContent[columnCount - 1] = merged;
+        }
+        currentContent = keepContent;
+    }
+
+    // Re-create columns editor
+    createColumnElements(columnCount);
+
+    // Set content for new columns (with merged data)
+    const newColumns = document.querySelectorAll('.notepad-column [contenteditable]');
+    newColumns.forEach((col, index) => {
+        col.innerHTML = currentContent[index] || '';
+    });
+
+    updateCharacterCount();
+    triggerAutoSave();
+}
+
+        function showDeleteModal(notepadKey) {
+            notepadToDelete = notepadKey;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            notepadToDelete = null;
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        function confirmDelete() {
+            if (!notepadToDelete || !currentUser) return;
+            
+            const ref = database.ref('notepads/' + currentUser.userId + '/' + notepadToDelete);
+            ref.remove()
+                .then(() => {
+                    if (currentNotepadId === notepadToDelete) {
+                        currentNotepadId = null;
+                        document.getElementById('welcomeMessage').style.display = 'block';
+                        document.getElementById('notepadEditor').style.display = 'none';
+                    }
+                    closeDeleteModal();
+                    showSaveStatus();
+                })
+                .catch((error) => {
+                    showError('Delete failed: ' + error.message);
+                });
+        }
+
+        function showSaveStatus() {
+            const status = document.getElementById('saveStatus');
+            status.classList.add('show');
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 2000);
+        }
+
+        function showAutoSaveIndicator() {
+            document.getElementById('autoSaveIndicator').classList.add('show');
+        }
+
+        function hideAutoSaveIndicator() {
+            document.getElementById('autoSaveIndicator').classList.remove('show');
+        }
+
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+            document.getElementById('profileUsername').value = currentUser.username;
+            
+            database.ref('users/' + currentUser.userId).once('value', (snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('profileEmail').value = userData.email || '';
+                    document.getElementById('profilePhone').value = userData.phone || '';
+                }
+            });
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function updateProfile() {
+            const email = document.getElementById('profileEmail').value.trim();
+            const phone = document.getElementById('profilePhone').value.trim();
+            
+            if (email && !isValidEmail(email)) {
+                showError('Please enter a valid email address');
+                return;
+            }
+            
+            if (phone && !isValidPhone(phone)) {
+                showError('Please enter a valid phone number (09**-***-***)');
+                return;
+            }
+            
+            document.getElementById('updateSpinner').style.display = 'inline-block';
+            document.getElementById('updateText').textContent = 'Updating...';
+            
+            database.ref('users/' + currentUser.userId).update({
+                email: email,
+                phone: phone
+            })
+            .then(() => {
+                closeProfileModal();
+                showSaveStatus();
+            })
+            .catch((error) => {
+                showError('Update failed: ' + error.message);
+            })
+            .finally(() => {
+                document.getElementById('updateSpinner').style.display = 'none';
+                document.getElementById('updateText').textContent = 'Update Profile';
+            });
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function isValidPhone(phone) {
+            return /^09\d{2}-\d{3}-\d{3}$/.test(phone);
+        }
+
+        window.onclick = function(event) {
+            const profileModal = document.getElementById('profileModal');
+            const deleteModal = document.getElementById('deleteModal');
+            if (event.target == profileModal) {
+                closeProfileModal();
+            }
+            if (event.target == deleteModal) {
+                closeDeleteModal();
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        if (currentNotepadId) saveNotepad();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        createNewNotepad();
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        toggleFormat('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        toggleFormat('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        toggleFormat('underline');
+                        break;
+                }
+            }
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (autoSaveTimer) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
